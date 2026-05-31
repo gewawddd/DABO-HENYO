@@ -44,6 +44,8 @@ export function App() {
   );
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [rounds, setRounds] = useState<Round[]>(DEFAULT_ROUNDS);
+  const [gameRounds, setGameRounds] = useState<Round[]>(DEFAULT_ROUNDS);
+  const [skippedRounds, setSkippedRounds] = useState<Round[]>([]);
   // Active game state
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   const [currentTeam, setCurrentTeam] = useState<Team>('A');
@@ -91,6 +93,8 @@ export function App() {
     const playable = rounds.filter((r) => r.word.trim().length > 0);
     if (playable.length === 0) return;
     setRounds(playable);
+    setGameRounds(playable);
+    setSkippedRounds([]);
     setCurrentRoundIndex(0);
     setCurrentTeam('A');
     setScoreA(0);
@@ -103,9 +107,17 @@ export function App() {
     if (team === 'A') setScoreA((s) => Math.max(0, s + delta));else
     setScoreB((s) => Math.max(0, s + delta));
   };
-  const advance = () => {
-    if (currentRoundIndex >= rounds.length - 1) {
-      setPhase('winner');
+  const advance = (nextSkipped?: Round[]) => {
+    const skippedPool = nextSkipped ?? skippedRounds;
+    if (currentRoundIndex >= gameRounds.length - 1) {
+      if (skippedPool.length > 0) {
+        setGameRounds(skippedPool);
+        setSkippedRounds([]);
+        setCurrentRoundIndex(0);
+        setCurrentTeam((t) => t === 'A' ? 'B' : 'A');
+      } else {
+        setPhase('winner');
+      }
     } else {
       setCurrentRoundIndex((i) => i + 1);
       setCurrentTeam((t) => t === 'A' ? 'B' : 'A');
@@ -124,6 +136,9 @@ export function App() {
     advance();
   };
   const handleSkip = (elapsed: number) => {
+    const currentRound = gameRounds[currentRoundIndex];
+    const nextSkipped = currentRound ? [...skippedRounds, currentRound] : skippedRounds;
+    if (currentRound) setSkippedRounds(nextSkipped);
     setResults((r) => [
     ...r,
     {
@@ -132,10 +147,13 @@ export function App() {
       elapsed
     }]
     );
-    advance();
+    advance(nextSkipped);
   };
   const handleNextRound = (elapsed: number) => {
     // Advance without an explicit correct/wrong mark; record as skip for stats fairness
+    const currentRound = gameRounds[currentRoundIndex];
+    const nextSkipped = currentRound ? [...skippedRounds, currentRound] : skippedRounds;
+    if (currentRound) setSkippedRounds(nextSkipped);
     setResults((r) => [
     ...r,
     {
@@ -144,7 +162,7 @@ export function App() {
       elapsed
     }]
     );
-    advance();
+    advance(nextSkipped);
   };
   const endGame = () => setPhase('winner');
   // ---- Stats ----
@@ -231,7 +249,7 @@ export function App() {
           
             <GameScreen
             settings={settings}
-            rounds={rounds}
+            rounds={gameRounds}
             currentRoundIndex={currentRoundIndex}
             currentTeam={currentTeam}
             scoreA={scoreA}

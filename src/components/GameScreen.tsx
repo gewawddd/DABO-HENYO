@@ -50,7 +50,7 @@ export function GameScreen({
     setRunning(false);
     setWordRevealed(false);
     setHintsShown(0);
-  }, [currentRoundIndex, total]);
+  }, [currentRoundIndex, total, rounds]);
   // Countdown
   useEffect(() => {
     if (running) {
@@ -72,8 +72,8 @@ export function GameScreen({
   const teamName = currentTeam === 'A' ? settings.teamAName : settings.teamBName;
   const isLast = currentRoundIndex >= rounds.length - 1;
   return (
-    <main className="hsc-backdrop min-h-full w-full px-4 py-6 sm:px-8 sm:py-8">
-      <div className="max-w-6xl mx-auto">
+    <main className="hsc-backdrop min-h-full w-full px-4 py-6 sm:px-8 sm:py-8 hsc-tv-stage">
+      <div className="max-w-7xl mx-auto hsc-tv-max">
         {/* Top bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div className="hsc-glass rounded-2xl px-5 py-3">

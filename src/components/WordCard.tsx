@@ -47,7 +47,7 @@ export function WordCard({
               opacity: 0,
               scale: 0.6
             }}
-            className="font-display text-5xl sm:text-7xl md:text-8xl text-accent text-center break-words drop-shadow-lg">
+            className="font-display text-6xl sm:text-8xl md:text-9xl lg:text-[7.5rem] text-accent text-center break-words drop-shadow-lg">
             
               {round.word.toUpperCase()}
             </motion.div> :

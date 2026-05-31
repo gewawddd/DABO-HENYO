@@ -78,7 +78,7 @@ export function WinnerScreen({
   }];
 
   return (
-    <main className="hsc-backdrop min-h-full w-full px-4 py-10 sm:px-8 sm:py-16 flex items-center">
+    <main className="hsc-backdrop min-h-full w-full px-4 py-10 sm:px-8 sm:py-16 flex items-center hsc-tv-stage">
       {!tie &&
       <Confetti
         width={size.w}
@@ -88,7 +88,7 @@ export function WinnerScreen({
         gravity={0.25} />
 
       }
-      <div className="max-w-3xl mx-auto w-full text-center">
+      <div className="max-w-5xl mx-auto w-full text-center hsc-tv-max">
         <motion.div
           initial={{
             scale: 0,
