@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Trash2Icon, PlusIcon, MinusIcon } from 'lucide-react';
 import { Round } from '../types';
 interface RoundConfigRowProps {
@@ -7,13 +7,55 @@ interface RoundConfigRowProps {
   onChange: (id: string, patch: Partial<Round>) => void;
   onDelete: (id: string) => void;
 }
-export function RoundConfigRow({
+export const RoundConfigRow = React.memo(function RoundConfigRow({
   round,
   index,
   onChange,
   onDelete
 }: RoundConfigRowProps) {
+  const [draft, setDraft] = useState(() => ({
+    word: round.word,
+    hint1: round.hint1,
+    hint2: round.hint2 ?? '',
+    hint3: round.hint3 ?? ''
+  }));
   const [showExtra, setShowExtra] = useState(!!(round.hint2 || round.hint3));
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setDraft({
+      word: round.word,
+      hint1: round.hint1,
+      hint2: round.hint2 ?? '',
+      hint3: round.hint3 ?? ''
+    });
+  }, [round.hint1, round.hint2, round.hint3, round.word]);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const patch: Partial<Round> = {};
+      if (draft.word !== round.word) patch.word = draft.word;
+      if (draft.hint1 !== round.hint1) patch.hint1 = draft.hint1;
+      if (draft.hint2 !== (round.hint2 ?? '')) patch.hint2 = draft.hint2;
+      if (draft.hint3 !== (round.hint3 ?? '')) patch.hint3 = draft.hint3;
+      if (Object.keys(patch).length > 0) onChange(round.id, patch);
+    }, 120);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [draft, onChange, round.hint1, round.hint2, round.hint3, round.id, round.word]);
+
+  const flushChanges = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = null;
+    const patch: Partial<Round> = {};
+    if (draft.word !== round.word) patch.word = draft.word;
+    if (draft.hint1 !== round.hint1) patch.hint1 = draft.hint1;
+    if (draft.hint2 !== (round.hint2 ?? '')) patch.hint2 = draft.hint2;
+    if (draft.hint3 !== (round.hint3 ?? '')) patch.hint3 = draft.hint3;
+    if (Object.keys(patch).length > 0) onChange(round.id, patch);
+  };
   return (
     <div className="hsc-glass rounded-2xl p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
@@ -37,12 +79,14 @@ export function RoundConfigRow({
             Word
           </label>
           <input
-            value={round.word}
+            value={draft.word}
             onChange={(e) =>
-            onChange(round.id, {
+            setDraft((d) => ({
+              ...d,
               word: e.target.value
-            })
+            }))
             }
+            onBlur={flushChanges}
             placeholder="e.g. Jollibee"
             className="w-full rounded-xl bg-white/15 border border-white/20 px-4 py-3 text-white placeholder-white/40 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-accent" />
           
@@ -52,12 +96,14 @@ export function RoundConfigRow({
             Hint
           </label>
           <input
-            value={round.hint1}
+            value={draft.hint1}
             onChange={(e) =>
-            onChange(round.id, {
+            setDraft((d) => ({
+              ...d,
               hint1: e.target.value
-            })
+            }))
             }
+            onBlur={flushChanges}
             placeholder="e.g. Fast Food"
             className="w-full rounded-xl bg-white/15 border border-white/20 px-4 py-3 text-white placeholder-white/40 text-lg focus:outline-none focus:ring-2 focus:ring-accent" />
           
@@ -71,12 +117,14 @@ export function RoundConfigRow({
               Hint 2 (optional)
             </label>
             <input
-            value={round.hint2 ?? ''}
+            value={draft.hint2}
             onChange={(e) =>
-            onChange(round.id, {
+            setDraft((d) => ({
+              ...d,
               hint2: e.target.value
-            })
+            }))
             }
+            onBlur={flushChanges}
             placeholder="Second hint"
             className="w-full rounded-xl bg-white/15 border border-white/20 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-accent" />
           
@@ -86,12 +134,14 @@ export function RoundConfigRow({
               Hint 3 (optional)
             </label>
             <input
-            value={round.hint3 ?? ''}
+            value={draft.hint3}
             onChange={(e) =>
-            onChange(round.id, {
+            setDraft((d) => ({
+              ...d,
               hint3: e.target.value
-            })
+            }))
             }
+            onBlur={flushChanges}
             placeholder="Third hint"
             className="w-full rounded-xl bg-white/15 border border-white/20 px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-accent" />
           
@@ -113,4 +163,4 @@ export function RoundConfigRow({
       </button>
     </div>);
 
-}
+  });

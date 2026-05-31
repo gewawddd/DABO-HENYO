@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { useScreenInit } from './useScreenInit';
 import {
   Round,
@@ -39,9 +40,9 @@ const DEFAULT_SETTINGS: GameSettings = {
 };
 export function App() {
   const screenInit = useScreenInit();
-  const [phase, setPhase] = useState<Phase>(
-    screenInit.phase as Phase ?? 'setup'
-  );
+  const navigate = useNavigate();
+  const location = useLocation();
+  const initPhase = screenInit.phase as Phase | undefined;
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [rounds, setRounds] = useState<Round[]>(DEFAULT_ROUNDS);
   const [gameRounds, setGameRounds] = useState<Round[]>(DEFAULT_ROUNDS);
@@ -52,13 +53,21 @@ export function App() {
   const [scoreA, setScoreA] = useState(0);
   const [scoreB, setScoreB] = useState(0);
   const [results, setResults] = useState<RoundResult[]>([]);
+
+  useEffect(() => {
+    if (!initPhase) return;
+    const target = initPhase === 'game' ? '/game' : initPhase === 'winner' ? '/winner' : '/setup';
+    if (location.pathname !== target) {
+      navigate(target, { replace: true });
+    }
+  }, [initPhase, location.pathname, navigate]);
   // ---- Setup handlers ----
-  const updateSettings = (patch: Partial<GameSettings>) =>
+  const updateSettings = useCallback((patch: Partial<GameSettings>) =>
   setSettings((s) => ({
     ...s,
     ...patch
-  }));
-  const updateRound = (id: string, patch: Partial<Round>) =>
+  })), []);
+  const updateRound = useCallback((id: string, patch: Partial<Round>) =>
   setRounds((rs) =>
   rs.map((r) =>
   r.id === id ?
@@ -68,8 +77,8 @@ export function App() {
   } :
   r
   )
-  );
-  const addRound = () =>
+  ), []);
+  const addRound = useCallback(() =>
   setRounds((rs) => [
   ...rs,
   {
@@ -77,10 +86,10 @@ export function App() {
     word: '',
     hint1: ''
   }]
-  );
-  const deleteRound = (id: string) =>
-  setRounds((rs) => rs.filter((r) => r.id !== id));
-  const randomize = () =>
+  ), []);
+  const deleteRound = useCallback((id: string) =>
+  setRounds((rs) => rs.filter((r) => r.id !== id)), []);
+  const randomize = useCallback(() =>
   setRounds((rs) => {
     const arr = [...rs];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -88,8 +97,8 @@ export function App() {
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
-  });
-  const startGame = () => {
+  }), []);
+  const startGame = useCallback(() => {
     const playable = rounds.filter((r) => r.word.trim().length > 0);
     if (playable.length === 0) return;
     setRounds(playable);
@@ -100,8 +109,8 @@ export function App() {
     setScoreA(0);
     setScoreB(0);
     setResults([]);
-    setPhase('game');
-  };
+    navigate('/game');
+  }, [navigate, rounds]);
   // ---- Game handlers ----
   const adjustScore = (team: Team, delta: number) => {
     if (team === 'A') setScoreA((s) => Math.max(0, s + delta));else
@@ -116,7 +125,7 @@ export function App() {
         setCurrentRoundIndex(0);
         setCurrentTeam((t) => t === 'A' ? 'B' : 'A');
       } else {
-        setPhase('winner');
+        navigate('/winner');
       }
     } else {
       setCurrentRoundIndex((i) => i + 1);
@@ -164,7 +173,7 @@ export function App() {
     );
     advance(nextSkipped);
   };
-  const endGame = () => setPhase('winner');
+  const endGame = () => navigate('/winner');
   // ---- Stats ----
   const stats: GameStats = (() => {
     const correct = results.filter((r) => r.outcome === 'correct').length;
@@ -187,105 +196,116 @@ export function App() {
     setScoreA(0);
     setScoreB(0);
     setResults([]);
-    setPhase('setup');
+    setSkippedRounds([]);
+    navigate('/setup');
   };
   const newGame = () => {
     setSettings(DEFAULT_SETTINGS);
-    setRounds([
+    const freshRounds = [
     {
       id: newId(),
       word: '',
       hint1: ''
-    }]
-    );
+    }];
+    setRounds(freshRounds);
+    setGameRounds(freshRounds);
+    setSkippedRounds([]);
     setCurrentRoundIndex(0);
     setCurrentTeam('A');
     setScoreA(0);
     setScoreB(0);
     setResults([]);
-    setPhase('setup');
+    navigate('/setup');
   };
   return (
     <div className="w-full min-h-full">
       <AnimatePresence mode="wait">
-        {phase === 'setup' &&
-        <motion.div
-          key="setup"
-          initial={{
-            opacity: 0
-          }}
-          animate={{
-            opacity: 1
-          }}
-          exit={{
-            opacity: 0
-          }}>
-          
-            <SetupScreen
-            settings={settings}
-            rounds={rounds}
-            onSettingsChange={updateSettings}
-            onRoundChange={updateRound}
-            onAddRound={addRound}
-            onDeleteRound={deleteRound}
-            onRandomize={randomize}
-            onStart={startGame} />
-          
-          </motion.div>
-        }
-
-        {phase === 'game' &&
-        <motion.div
-          key="game"
-          initial={{
-            opacity: 0
-          }}
-          animate={{
-            opacity: 1
-          }}
-          exit={{
-            opacity: 0
-          }}>
-          
-            <GameScreen
-            settings={settings}
-            rounds={gameRounds}
-            currentRoundIndex={currentRoundIndex}
-            currentTeam={currentTeam}
-            scoreA={scoreA}
-            scoreB={scoreB}
-            onAdjustScore={adjustScore}
-            onOutcome={handleOutcome}
-            onSkip={handleSkip}
-            onNextRound={handleNextRound}
-            onEndGame={endGame} />
-          
-          </motion.div>
-        }
-
-        {phase === 'winner' &&
-        <motion.div
-          key="winner"
-          initial={{
-            opacity: 0
-          }}
-          animate={{
-            opacity: 1
-          }}
-          exit={{
-            opacity: 0
-          }}>
-          
-            <WinnerScreen
-            settings={settings}
-            scoreA={scoreA}
-            scoreB={scoreB}
-            stats={stats}
-            onPlayAgain={playAgain}
-            onNewGame={newGame} />
-          
-          </motion.div>
-        }
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<Navigate to="/setup" replace />} />
+          <Route
+            path="/setup"
+            element={
+              <motion.div
+                key="setup"
+                initial={{
+                  opacity: 0
+                }}
+                animate={{
+                  opacity: 1
+                }}
+                exit={{
+                  opacity: 0
+                }}>
+                
+                <SetupScreen
+                  settings={settings}
+                  rounds={rounds}
+                  onSettingsChange={updateSettings}
+                  onRoundChange={updateRound}
+                  onAddRound={addRound}
+                  onDeleteRound={deleteRound}
+                  onRandomize={randomize}
+                  onStart={startGame} />
+                
+              </motion.div>
+            } />
+          <Route
+            path="/game"
+            element={
+              <motion.div
+                key="game"
+                initial={{
+                  opacity: 0
+                }}
+                animate={{
+                  opacity: 1
+                }}
+                exit={{
+                  opacity: 0
+                }}>
+                
+                <GameScreen
+                  settings={settings}
+                  rounds={gameRounds}
+                  currentRoundIndex={currentRoundIndex}
+                  currentTeam={currentTeam}
+                  scoreA={scoreA}
+                  scoreB={scoreB}
+                  onAdjustScore={adjustScore}
+                  onOutcome={handleOutcome}
+                  onSkip={handleSkip}
+                  onNextRound={handleNextRound}
+                  onEndGame={endGame} />
+                
+              </motion.div>
+            } />
+          <Route
+            path="/winner"
+            element={
+              <motion.div
+                key="winner"
+                initial={{
+                  opacity: 0
+                }}
+                animate={{
+                  opacity: 1
+                }}
+                exit={{
+                  opacity: 0
+                }}>
+                
+                <WinnerScreen
+                  settings={settings}
+                  scoreA={scoreA}
+                  scoreB={scoreB}
+                  stats={stats}
+                  onPlayAgain={playAgain}
+                  onNewGame={newGame} />
+                
+              </motion.div>
+            } />
+          <Route path="*" element={<Navigate to="/setup" replace />} />
+        </Routes>
       </AnimatePresence>
     </div>);
 
