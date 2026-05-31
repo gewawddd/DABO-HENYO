@@ -1,0 +1,59 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+@import url('https://fonts.googleapis.com/css2?family=Lilita+One&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+:root {
+  --hsc-blue: #2563eb;
+  --hsc-blue-deep: #0b1f5c;
+  --hsc-red: #e11d48;
+  --hsc-yellow: #facc15;
+  --hsc-bg: #0a1742;
+}
+html, body, #root {
+  height: 100%;
+}
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--hsc-bg);
+  color: #fff;
+}
+.font-display {
+  font-family: 'Lilita One', system-ui, cursive;
+  letter-spacing: 0.02em;
+}
+/* Vibrant game-show backdrop */
+.hsc-backdrop {
+  background-color: var(--hsc-bg);
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(37, 99, 235, 0.45), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(225, 29, 72, 0.40), transparent 45%),
+    radial-gradient(circle at 50% 95%, rgba(250, 204, 21, 0.28), transparent 50%);
+}
+/* Glassmorphism */
+.hsc-glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+}
+.hsc-glass-strong {
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 12px 50px rgba(0, 0, 0, 0.45);
+}
+@keyframes hsc-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+.hsc-pulse {
+  animation: hsc-pulse 0.8s ease-in-out infinite;
+}
